@@ -2,8 +2,12 @@
 import axios from 'axios'
 import { useAuthStore } from '@/stores/auth.js'
 
+
+// Use environment variable for backend
+const baseURL = import.meta.env.VITE_API_URL
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json'
   }
