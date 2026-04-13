@@ -1,524 +1,529 @@
 <template>
-  <div class="flex h-screen bg-gray-100">
-    <!-- Sidebar -->
-    <aside :class="[
-        sidebarOpen ? 'w-64' : 'w-0 overflow-hidden',
-        'bg-gradient-to-b from-gray-700 to-gray-700 text-white shadow-xl flex flex-col transition-all duration-300'
+  <div class="flex h-screen bg-[#F8FAFC] font-sans overflow-hidden selection:bg-[#1B8B3C]/20 selection:text-[#1B8B3C]">
+    
+    <!-- 1. NOTIFICATION TOAST -->
+    <Transition name="toast">
+      <div v-if="notification.show" :class="[
+        'fixed top-6 right-6 z-[200] px-6 py-4 rounded-lg font-black text-white flex items-center space-x-3 shadow-2xl animate-in slide-in-from-top',
+        notification.type === 'success' ? 'bg-[#1B8B3C]' : 'bg-red-500'
       ]">
-      <div class="p-6 border-b border-gray-600 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-            <span class="text-xl font-bold text-white">A</span>
+        <CheckIcon v-if="notification.type === 'success'" class="w-5 h-5" />
+        <XCircleIcon v-else class="w-5 h-5" />
+        <span class="text-sm uppercase tracking-widest">{{ notification.message }}</span>
+      </div>
+    </Transition>
+
+    <!-- 2. NAVIGATION SIDEBAR -->
+    <aside 
+      :class="[sidebarOpen ? 'w-72' : 'w-20', 'bg-[#1B8B3C] text-white shadow-2xl transition-all duration-500 ease-in-out flex flex-col z-40']"
+    >
+      <div class="p-6 border-b border-[#156B2E] flex items-center justify-between h-24">
+        <div v-if="sidebarOpen" class="flex items-center space-x-3 animate-in fade-in">
+          <div class="w-10 h-10 bg-[#FF6B35] rounded-xl flex items-center justify-center shadow-lg shadow-[#FF6B35]/20">
+            <ZapIcon class="w-6 h-6 text-white fill-white" />
           </div>
-          <span class="text-lg font-bold">TrackTimi</span>
+          <div class="flex flex-col">
+            <span class="text-xl font-black tracking-tighter uppercase leading-none italic">TrackTimi</span>
+            <span class="text-[8px] font-black text-[#4ADE80] uppercase tracking-[0.4em] mt-1">Platform Admin</span>
+          </div>
         </div>
-        <button @click="toggleSidebar" class="p-1 rounded-lg bg-gray-700 hover:bg-gray-600">
-          <span v-if="sidebarOpen">←</span>
-          <span v-else>→</span>
+        <button @click="sidebarOpen = !sidebarOpen" class="p-2 rounded-xl bg-[#156B2E] hover:bg-[#0F5124] border border-[#156B2E] transition-all">
+          <MenuIcon v-if="!sidebarOpen" class="w-5 h-5 text-green-200" />
+          <ChevronLeftIcon v-else class="w-5 h-5 text-green-200" />
         </button>
       </div>
 
-      <nav class="flex-1 py-8 px-4 space-y-2">
-        <router-link to="/superadmin" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-600">
-          <span>📊</span>
-          <span>Dashboard</span>
-        </router-link>
-        <router-link to="/superadmin/organizations" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all bg-orange-500 text-white shadow-lg">
-          <span>🏢</span>
-          <span>Organizations</span>
-        </router-link>
-        <router-link to="/superadmin/revenue" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-500">
-          <span>💰</span>
-          <span>Revenue</span>
-        </router-link>
-        <router-link to="/superadmin/subscriptions" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-600">
-          <span>📦</span>
-          <span>Subscriptions</span>
-        </router-link>
-        <router-link to="/superadmin/analytics" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-600">
-          <span>📈</span>
-          <span>Analytics</span>
-        </router-link>
-        <router-link to="/superadmin/monitoring" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-600">
-          <span>🔍</span>
-          <span>Monitoring</span>
-        </router-link>
-        <router-link to="/superadmin/audit-logs" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-600">
-          <span>📋</span>
-          <span>Audit Logs</span>
-        </router-link>
-        <router-link to="/superadmin/settings" class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-gray-100 hover:bg-gray-600">
-          <span>⚙️</span>
-          <span>Settings</span>
+      <nav class="flex-1 py-8 px-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <router-link v-for="item in navItems" :key="item.path" :to="item.path"
+          class="flex items-center space-x-4 px-4 py-3.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all group"
+          :class="[$route.path === item.path ? 'bg-[#FF6B35] text-white shadow-xl shadow-[#FF6B35]/40' : 'text-green-100 hover:bg-[#156B2E] hover:text-white']"
+        >
+          <component :is="item.icon" class="w-5 h-5 shrink-0" />
+          <span v-if="sidebarOpen">{{ item.name }}</span>
         </router-link>
       </nav>
-
-      <div class="p-6 border-t border-gray-600">
-        <div class="flex items-center space-x-3 cursor-pointer hover:bg-gray-600 p-3 rounded-lg transition-all">
-          <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center font-bold">
-            JS
-          </div>
-          <div class="flex-1">
-            <div class="font-semibold text-sm">Jodell Suah</div>
-            <div class="text-xs text-orange-400">Super Admin</div>
-          </div>
-        </div>
-      </div>
     </aside>
 
-    <!-- Main Content -->
-    <main class="flex-1 overflow-auto">
-      <div class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div class="px-8 py-8">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-slate-900">Organizations</h1>
-              <p class="text-slate-600 mt-2">Manage all organizations and their details</p>
-            </div>
-            <div class="flex items-center space-x-3">
-              <button class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg font-semibold transition-all">
-                Filters
-              </button>
-              <button @click="handleLogout" class="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold transition-all">
-                Logout
-              </button>
-            </div>
-          </div>
+    <!-- 3. MAIN WORKSPACE -->
+    <main class="flex-1 flex flex-col min-w-0 relative">
+      <header class="h-24 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-10 sticky top-0 z-20">
+        <div>
+          <h1 class="text-2xl font-black text-[#1B8B3C] tracking-tight italic uppercase">Organization Management</h1>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Create, Edit & Manage All Organizations</p>
         </div>
-      </div>
-
-      <div class="p-8">
-        <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-          {{ error }}
+        <div class="flex items-center space-x-4">
+          <div class="relative group">
+            <SearchIcon class="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-[#1B8B3C] transition-colors" />
+            <input v-model="searchQuery" placeholder="Filter by Name or Domain..." 
+              class="pl-14 pr-6 py-4 bg-slate-50 border-none rounded-lg text-[11px] font-bold shadow-sm w-80 focus:ring-4 focus:ring-[#1B8B3C]/20 transition-all outline-none" />
+          </div>
+          <button @click="loadOrganizations" :disabled="loading" class="p-4 bg-[#1B8B3C] text-white rounded-lg hover:bg-[#156B2E] transition-all active:scale-90 shadow-lg">
+             <RefreshCwIcon :class="{'animate-spin': loading}" class="w-5 h-5" />
+          </button>
+          <button @click="showCreateModal = true" class="px-6 py-4 bg-[#FF6B35] text-white rounded-lg hover:bg-[#E55A25] font-black text-xs uppercase tracking-widest flex items-center space-x-2 shadow-lg active:scale-95">
+            <PlusIcon class="w-5 h-5" />
+            <span>New Organization</span>
+          </button>
         </div>
+      </header>
 
-        <div class="bg-white rounded-xl border border-gray-200 p-8 shadow-sm">
-          <div class="mb-6">
-            <h2 class="text-2xl font-bold text-slate-900">All Organizations ({{ organizations.length }})</h2>
-            <p class="text-slate-600 mt-1">Manage all organizations on the platform</p>
-          </div>
-
-          <div v-if="loading" class="text-center py-12">
-            <div class="text-gray-500">Loading organizations...</div>
-          </div>
-
-          <div v-else-if="organizations.length === 0" class="text-center py-12">
-            <div class="text-6xl mb-4">📭</div>
-            <p class="text-slate-600">No organizations found</p>
-          </div>
-
-          <div v-else class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+      <div class="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar animate-in fade-in duration-1000">
+        
+        <div class="bg-white rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
               <thead>
-                <tr class="border-b border-gray-300 bg-gray-50">
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Logo</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Organization Name</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Users</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Departments</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Plan</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Status</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Created</th>
-                  <th class="pb-3 px-4 font-semibold text-slate-700">Actions</th>
+                <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-white border-b border-slate-50">
+                  <th class="px-10 py-6">Organization</th>
+                  <th class="px-10 py-6">Domain</th>
+                  <th class="px-10 py-6 text-center">Members</th>
+                  <th class="px-10 py-6 text-center">Status</th>
+                  <th class="px-10 py-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr v-for="org in organizations" :key="org.Org_ID" class="border-b border-gray-200 hover:bg-gray-50 transition-all">
-                  <td class="py-4 px-4">
-                    <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center font-bold text-emerald-700">
-                      {{ org.initials }}
+              <tbody class="divide-y divide-slate-50">
+                <tr v-for="org in filteredOrgs" :key="org.Org_ID" class="group hover:bg-[#1B8B3C]/5 transition-all duration-300">
+                  <td class="px-10 py-8">
+                    <div class="flex items-center space-x-4">
+                      <div class="w-12 h-12 bg-[#1B8B3C] text-white rounded-lg flex items-center justify-center font-black text-lg shadow-xl group-hover:rotate-6 transition-transform uppercase">
+                        {{ org.Org_Name[0] }}
+                      </div>
+                      <div>
+                        <p class="text-sm font-black text-[#000000] leading-none mb-1.5">{{ org.Org_Name }}</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">ID: ORG-{{ org.Org_ID }}</p>
+                      </div>
                     </div>
                   </td>
-                  <td class="py-4 px-4">
-                    <p class="font-semibold text-slate-900">{{ org.Org_Name }}</p>
-                    <p class="text-xs text-slate-500">{{ org.Org_Slug }}</p>
+                  <td class="px-10 py-8 font-mono text-[11px] font-black text-[#1B8B3C] uppercase tracking-tighter">
+                    {{ org.Org_Domain }}.tracktimi.com
                   </td>
-                  <td class="py-4 px-4">
-                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">{{ org.userCount || 0 }}</span>
-                  </td>
-                  <td class="py-4 px-4">
-                    <span class="text-slate-900 font-medium">{{ org.deptCount || 0 }}</span>
-                  </td>
-                  <td class="py-4 px-4">
-                    <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">{{ org.Plan_Name || 'Free' }}</span>
-                  </td>
-                  <td class="py-4 px-4">
-                    <div class="flex items-center gap-2">
-                      <span v-if="org.Is_Active" class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">✅ Active</span>
-                      <span v-else class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">🔴 Inactive</span>
+                  <td class="px-10 py-8">
+                    <div class="flex flex-col items-center space-y-2">
+                       <span class="text-xs font-black text-[#000000]">{{ org.userCount || 0 }} Members</span>
+                       <div class="h-1 w-24 bg-slate-100 rounded-full overflow-hidden">
+                          <div class="h-full bg-[#1B8B3C]" :style="{ width: Math.min((org.userCount/50)*100, 100) + '%' }"></div>
+                       </div>
                     </div>
                   </td>
-                  <td class="py-4 px-4 text-sm text-slate-600">
-                    {{ new Date(org.Created_at).toLocaleDateString() }}
+                  <td class="px-10 py-8 text-center">
+                    <div v-if="org.Is_Active" class="inline-flex items-center px-4 py-2 bg-[#1B8B3C]/10 text-[#1B8B3C] rounded-full border border-[#1B8B3C]/20">
+                      <div class="w-1.5 h-1.5 bg-[#1B8B3C] rounded-full mr-2 animate-pulse"></div>
+                      <span class="text-[9px] font-black uppercase tracking-widest">Active</span>
+                    </div>
+                    <div v-else class="inline-flex items-center px-4 py-2 bg-red-50 text-red-600 rounded-full border border-red-100">
+                      <span class="text-[9px] font-black uppercase tracking-widest">Inactive</span>
+                    </div>
                   </td>
-                  <td class="py-4 px-4">
-                    <button @click="viewOrgDetails(org)" class="text-emerald-600 hover:text-emerald-700 font-semibold text-sm">
-                      👁️ View
-                    </button>
+                  <td class="px-10 py-8 text-right">
+                    <div class="flex items-center justify-end space-x-2">
+                      <button @click="startEditOrg(org)" class="px-4 py-3 bg-slate-100 text-[#1B8B3C] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1B8B3C] hover:text-white transition-all active:scale-95">
+                        <EditIcon class="w-4 h-4" />
+                      </button>
+                      <button @click="loadOrgDetails(org.Org_ID)" class="px-6 py-3 bg-[#FF6B35] text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#E55A25] transition-all active:scale-95 shadow-lg">
+                        Manage
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <div v-if="organizations.length === 0" class="py-32 text-center opacity-30 italic text-sm font-black uppercase tracking-[0.4em]">No Organizations</div>
         </div>
       </div>
-    </main>
 
-    <!-- Organization Detail Modal -->
-    <div v-if="selectedOrg" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <div class="w-16 h-16 bg-white rounded-lg flex items-center justify-center font-bold text-emerald-600 text-2xl">
-              {{ selectedOrg.initials }}
+      <!-- 4. CREATE ORGANIZATION MODAL -->
+      <Transition name="modal">
+        <div v-if="showCreateModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-10 animate-in zoom-in-95 duration-300">
+            <div class="mb-8">
+              <h2 class="text-2xl font-black text-[#1B8B3C] uppercase tracking-tight mb-2">Create Organization</h2>
+              <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Add a new customer organization</p>
             </div>
-            <div>
-              <h2 class="text-2xl font-bold">{{ selectedOrg.Org_Name }}</h2>
-              <p class="text-emerald-100">{{ selectedOrg.Org_Domain }}</p>
-            </div>
-          </div>
-          <button @click="selectedOrg = null" class="text-2xl hover:bg-emerald-500 p-2 rounded">✕</button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="p-8 space-y-6">
-          <!-- Status Indicator -->
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p class="text-sm font-semibold text-blue-700 mb-2">Current Status</p>
-            <div class="flex items-center space-x-4">
-              <span v-if="selectedOrg.Is_Active" class="bg-green-100 text-green-800 px-4 py-2 rounded-lg font-bold">✅ Active</span>
-              <span v-else class="bg-red-100 text-red-800 px-4 py-2 rounded-lg font-bold">🔴 Inactive</span>
-              <p class="text-sm text-gray-600">Created: {{ new Date(selectedOrg.Created_at).toLocaleDateString() }}</p>
-            </div>
-          </div>
-
-          <!-- Organization Details Grid -->
-          <div class="grid grid-cols-2 gap-4">
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-600 font-semibold">Organization Type</p>
-              <p class="text-lg font-bold text-gray-900 mt-1">{{ selectedOrg.Org_Type_ID ? `Type ${selectedOrg.Org_Type_ID}` : 'N/A' }}</p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-600 font-semibold">Region</p>
-              <p class="text-lg font-bold text-gray-900 mt-1">{{ selectedOrg.Region_ID ? `Region ${selectedOrg.Region_ID}` : 'N/A' }}</p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-600 font-semibold">Email</p>
-              <p class="text-lg font-bold text-gray-900 mt-1">{{ selectedOrg.Email || 'N/A' }}</p>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg">
-              <p class="text-sm text-gray-600 font-semibold">Phone</p>
-              <p class="text-lg font-bold text-gray-900 mt-1">{{ selectedOrg.Phone_Num || 'N/A' }}</p>
-            </div>
-            <div class="bg-blue-50 p-4 rounded-lg">
-              <p class="text-sm text-blue-600 font-semibold">Total Users</p>
-              <p class="text-lg font-bold text-blue-900 mt-1">{{ selectedOrg.user_count || 0 }}</p>
-            </div>
-            <div class="bg-purple-50 p-4 rounded-lg">
-              <p class="text-sm text-purple-600 font-semibold">Departments</p>
-              <p class="text-lg font-bold text-purple-900 mt-1">{{ selectedOrg.dept_count || 0 }}</p>
-            </div>
-          </div>
-
-          <!-- Address -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <p class="text-sm text-gray-600 font-semibold">Address</p>
-            <p class="text-gray-900 mt-2">{{ selectedOrg.Address || 'Not provided' }}</p>
-          </div>
-
-          <!-- Employees -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <p class="text-sm text-gray-600 font-semibold">Number of Employees</p>
-            <p class="text-lg font-bold text-gray-900 mt-1">{{ selectedOrg.Num_of_Employee || 0 }}</p>
-          </div>
-
-          <!-- Theme Color -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <p class="text-sm text-gray-600 font-semibold">Theme Color</p>
-            <div class="flex items-center space-x-3 mt-2">
-              <div class="w-12 h-12 rounded-lg border-2 border-gray-300" :style="{ backgroundColor: selectedOrg.Theme_Color }"></div>
-              <p class="text-lg font-mono text-gray-900">{{ selectedOrg.Theme_Color }}</p>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="border-t pt-6 space-y-3">
-            <p class="text-sm font-semibold text-gray-700 mb-4">Superadmin Actions</p>
-            <div class="grid grid-cols-2 gap-3">
-              <button @click="suspendOrg(selectedOrg.Org_ID)" :disabled="submitting" class="px-4 py-3 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-all">
-                ⏸️ {{ selectedOrg.Is_Active ? 'Suspend' : 'Activate' }}
-              </button>
-              <button @click="deleteOrg(selectedOrg.Org_ID)" :disabled="submitting" class="px-4 py-3 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-all">
-                🗑️ Delete Organization
-              </button>
-              <button @click="extendTrial(selectedOrg.Org_ID)" :disabled="submitting" class="px-4 py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-all">
-                ⏳ Extend Trial
-              </button>
-              <button @click="viewUsers(selectedOrg.Org_ID)" :disabled="submitting" class="px-4 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white rounded-lg font-semibold transition-all">
-                👥 View Users
-              </button>
-            </div>
-          </div>
-
-          <div v-if="actionMessage" :class="['p-4 rounded-lg', actionMessageType === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800']">
-            {{ actionMessage }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Users Modal -->
-    <div v-if="showUsersModal && selectedOrgUsers" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex items-center justify-between">
-          <h2 class="text-2xl font-bold">Organization Users</h2>
-          <button @click="showUsersModal = false" class="text-2xl hover:bg-purple-500 p-2 rounded">✕</button>
-        </div>
-        <div class="p-6">
-          <div v-if="selectedOrgUsers.length === 0" class="text-center py-8">
-            <p class="text-gray-500">No users found</p>
-          </div>
-          <div v-else class="space-y-3">
-            <div v-for="user in selectedOrgUsers" :key="user.User_ID" class="border border-gray-200 p-4 rounded-lg hover:bg-gray-50">
-              <div class="flex justify-between items-start">
-                <div>
-                  <p class="font-bold text-gray-900">{{ user.First_Name }} {{ user.SurName }}</p>
-                  <p class="text-sm text-gray-600">{{ user.Email }}</p>
-                  <p class="text-xs text-gray-500 mt-1">{{ new Date(user.Created_at).toLocaleDateString() }}</p>
+            
+            <div class="space-y-5 mb-8">
+              <div>
+                <label class="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">Organization Name *</label>
+                <input v-model="newOrgForm.Org_Name" placeholder="Enter organization name" 
+                  class="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:border-[#1B8B3C] focus:ring-4 focus:ring-[#1B8B3C]/10 outline-none transition-all font-semibold" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">Domain *</label>
+                <input v-model="newOrgForm.Org_Domain" placeholder="subdomain" 
+                  class="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:border-[#1B8B3C] focus:ring-4 focus:ring-[#1B8B3C]/10 outline-none transition-all font-semibold" />
+                <p class="text-[9px] text-slate-400 mt-2"><span class="font-black">{{ newOrgForm.Org_Domain }}.tracktimi.com</span></p>
+              </div>
+              <div>
+                <label class="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">Theme Color</label>
+                <div class="flex items-center space-x-3">
+                  <input v-model="newOrgForm.Theme_Color" type="color" class="w-16 h-12 rounded-xl cursor-pointer border-2 border-slate-200" />
+                  <span class="text-[11px] font-mono font-bold text-slate-600">{{ newOrgForm.Theme_Color || '#1B8B3C' }}</span>
                 </div>
-                <span v-if="user.Is_Active" class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Active</span>
-                <span v-else class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Inactive</span>
               </div>
             </div>
+
+            <div class="flex space-x-3">
+              <button @click="showCreateModal = false" class="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                Cancel
+              </button>
+              <button @click="handleCreateSubmit" :disabled="operationLoading" class="flex-1 px-4 py-3 bg-[#FF6B35] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#E55A25] active:scale-95 transition-all disabled:opacity-50">
+                {{ operationLoading ? 'Creating...' : 'Create' }}
+              </button>
+            </div>
           </div>
         </div>
+      </Transition>
+
+      <!-- 5. EDIT ORGANIZATION MODAL -->
+      <Transition name="modal">
+        <div v-if="showEditModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-10 animate-in zoom-in-95 duration-300">
+            <div class="mb-8">
+              <h2 class="text-2xl font-black text-[#1B8B3C] uppercase tracking-tight mb-2">Edit Organization</h2>
+              <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Update organization details</p>
+            </div>
+            
+            <div class="space-y-5 mb-8">
+              <div>
+                <label class="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">Organization Name</label>
+                <input v-model="editOrgForm.Org_Name" placeholder="Enter organization name" 
+                  class="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:border-[#1B8B3C] focus:ring-4 focus:ring-[#1B8B3C]/10 outline-none transition-all font-semibold" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">Domain</label>
+                <input v-model="editOrgForm.Org_Domain" placeholder="subdomain" 
+                  class="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:border-[#1B8B3C] focus:ring-4 focus:ring-[#1B8B3C]/10 outline-none transition-all font-semibold" />
+                <p class="text-[9px] text-slate-400 mt-2"><span class="font-black">{{ editOrgForm.Org_Domain }}.tracktimi.com</span></p>
+              </div>
+              <div>
+                <label class="block text-[10px] font-black text-slate-700 uppercase tracking-widest mb-3">Theme Color</label>
+                <div class="flex items-center space-x-3">
+                  <input v-model="editOrgForm.Theme_Color" type="color" class="w-16 h-12 rounded-xl cursor-pointer border-2 border-slate-200" />
+                  <span class="text-[11px] font-mono font-bold text-slate-600">{{ editOrgForm.Theme_Color }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex space-x-3">
+              <button @click="showEditModal = false" class="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-all">
+                Cancel
+              </button>
+              <button @click="handleEditSubmit" :disabled="operationLoading" class="flex-1 px-4 py-3 bg-primary-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary-700 active:scale-95 transition-all disabled:opacity-50">
+                {{ operationLoading ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- 6. ORGANIZATION MANAGEMENT DRAWER -->
+      <Transition name="drawer">
+        <div v-if="showManagementDrawer && selectedOrg" class="absolute inset-y-0 right-0 w-[700px] bg-white shadow-[-50px_0_100px_rgba(0,0,0,0.3)] z-50 flex flex-col border-l border-slate-100">
+          <div class="h-40 bg-[#1B8B3C] text-white flex items-center justify-between px-10 relative overflow-hidden shrink-0">
+            <div class="relative z-10">
+              <span class="text-[9px] font-black text-[#4ADE80] uppercase tracking-[0.5em] mb-2 block">Organization Management</span>
+              <h2 class="text-3xl font-black tracking-tighter uppercase">{{ selectedOrg.info.Org_Name }}</h2>
+              <div class="flex items-center space-x-3 mt-3">
+                 <span class="text-[10px] font-bold text-white/80 font-mono tracking-tighter">{{ selectedOrg.info.Org_Domain }}.tracktimi.com</span>
+                 <div :class="selectedOrg.info.Is_Active ? 'bg-[#4ADE80]' : 'bg-red-500'" class="w-2.5 h-2.5 rounded-full"></div>
+              </div>
+            </div>
+            <button @click="showManagementDrawer = false" class="p-4 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg transition-all relative z-10">
+                <XIcon class="w-6 h-6 text-white" />
+            </button>
+          </div>
+          
+          <div class="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+            <!-- Control Buttons -->
+            <div class="grid grid-cols-2 gap-4">
+              <button @click="handleToggleStatus(selectedOrg.info.Org_ID, selectedOrg.info.Is_Active)" :disabled="operationLoading"
+                :class="selectedOrg.info.Is_Active ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' : 'bg-[#1B8B3C]/10 text-[#1B8B3C] border-[#1B8B3C]/20 hover:bg-[#1B8B3C]/20'"
+                class="py-5 rounded-lg font-black text-[10px] uppercase tracking-widest border transition-all disabled:opacity-50">
+                {{ selectedOrg.info.Is_Active ? '🚫 Deactivate' : '✅ Activate' }}
+              </button>
+              <button @click="handleDeleteOrg(selectedOrg.info.Org_ID)" :disabled="operationLoading" class="bg-red-600 text-white py-5 rounded-lg font-black text-[10px] uppercase tracking-widest hover:bg-red-700 transition-all disabled:opacity-50">
+                🗑️ Delete Org
+              </button>
+            </div>
+
+            <!-- Departments Section -->
+            <section>
+              <h3 class="text-xs font-black text-[#000000] uppercase tracking-widest mb-6 flex items-center">
+                <LayoutGridIcon class="w-4 h-4 mr-2 text-[#1B8B3C]" /> Departments
+              </h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div v-for="dept in selectedOrg.departments" :key="dept.Dep_ID" class="p-6 bg-[#1B8B3C]/5 rounded-3xl border border-[#1B8B3C]/20 hover:border-[#1B8B3C]/40 transition-all">
+                   <p class="text-xs font-black text-[#000000] truncate uppercase">{{ dept.Depart_Name }}</p>
+                   <p class="text-[9px] font-bold text-slate-400 uppercase mt-1">{{ dept.staff_count }} Personnel</p>
+                </div>
+                <div v-if="selectedOrg.departments.length === 0" class="col-span-2 text-center py-10 bg-slate-50 rounded-3xl opacity-30 italic text-xs">No departments</div>
+              </div>
+            </section>
+
+            <!-- Members Section -->
+            <section>
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xs font-black text-[#000000] uppercase tracking-widest flex items-center">
+                  <UsersIcon class="w-4 h-4 mr-2 text-[#1B8B3C]" /> Members
+                </h3>
+              </div>
+              
+              <!-- Add User Section -->
+              <div class="mb-6 p-5 bg-[#1B8B3C]/5 rounded-lg border border-[#1B8B3C]/20">
+                <label class="block text-[9px] font-black text-slate-700 uppercase tracking-widest mb-3">Assign User to Organization</label>
+                <div class="flex space-x-2">
+                  <input v-model="selectedUserToAdd" placeholder="User ID" type="number"
+                    class="flex-1 px-4 py-3 border-2 border-slate-200 rounded-xl focus:border-[#1B8B3C] outline-none text-sm font-semibold" />
+                  <button @click="handleAssignUser" :disabled="operationLoading || !selectedUserToAdd" class="px-5 py-3 bg-[#1B8B3C] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#156B2E] active:scale-95 transition-all disabled:opacity-50">
+                    <UserPlusIcon class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Users List -->
+              <div class="space-y-3">
+                <div v-for="user in selectedOrg.users" :key="user.User_ID" class="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-lg hover:border-[#1B8B3C]/40 transition-all group">
+                  <div class="flex items-center space-x-4 flex-1 min-w-0">
+                    <div class="w-10 h-10 bg-[#1B8B3C] text-white rounded-xl flex items-center justify-center font-black text-xs shrink-0">{{ user.First_Name[0] }}</div>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-xs font-black text-[#000000] truncate">{{ user.First_Name }} {{ user.SurName }}</p>
+                      <p class="text-[9px] font-medium text-slate-400 truncate">{{ user.Email }}</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-3 ml-4 shrink-0">
+                    <span class="text-[9px] font-black text-[#1B8B3C] uppercase tracking-widest">{{ user.Job_Title || 'Staff' }}</span>
+                    <button @click="handleRemoveUser(user.User_ID)" :disabled="operationLoading" class="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-all active:scale-90 disabled:opacity-50 opacity-0 group-hover:opacity-100">
+                      <UserMinusIcon class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <div v-if="selectedOrg.users.length === 0" class="text-center py-8 bg-slate-50 rounded-lg opacity-30 italic text-xs">No members assigned</div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </Transition>
+
+      <!-- Loading Overlay -->
+      <div v-if="loading && !showManagementDrawer" class="fixed inset-0 z-[100] bg-slate-900/10 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+       <div class="bg-[#1B8B3C] p-6 rounded-3xl shadow-3xl flex items-center space-x-4 text-white border border-white/10 animate-in zoom-in">
+          <RefreshCwIcon class="w-5 h-5 animate-spin text-[#FF6B35]" />
+          <span class="text-[10px] font-black uppercase tracking-[0.4em]">Loading Organizations</span>
+       </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { ref, onMounted, computed } from 'vue'
+import { 
+  ZapIcon, MenuIcon, ChevronLeftIcon, BuildingIcon, 
+  UsersIcon, SearchIcon, RefreshCwIcon, XIcon, LayoutGridIcon,
+  PlusIcon, EditIcon, TrashIcon, CheckIcon, XCircleIcon, UserPlusIcon, UserMinusIcon
+} from 'lucide-vue-next'
+import {
+  getOrganizations, getOrgDetails, createOrganization, updateOrganization, 
+  deleteOrganization, toggleOrgStatus, assignUserToOrg, removeUserFromOrg
+} from '@/services/superadminApi'
 
-const router = useRouter()
 const sidebarOpen = ref(true)
-const organizations = ref([])
 const loading = ref(false)
-const error = ref('')
+const searchQuery = ref('')
+const organizations = ref([])
 const selectedOrg = ref(null)
-const selectedOrgUsers = ref(null)
-const showUsersModal = ref(false)
-const submitting = ref(false)
-const actionMessage = ref('')
-const actionMessageType = ref('success')
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showManagementDrawer = ref(false)
+const operationLoading = ref(false)
+const notification = ref({ show: false, message: '', type: 'success' })
 
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value
-}
+// Form states
+const newOrgForm = ref({ Org_Name: '', Org_Domain: '', Theme_Color: '' })
+const editOrgForm = ref({ Org_ID: '', Org_Name: '', Org_Domain: '', Theme_Color: '' })
+const selectedUserToAdd = ref('')
+const availableUsers = ref([])
 
-const handleLogout = () => {
-  localStorage.removeItem('superAdminToken')
-  localStorage.removeItem('superAdminUser')
-  router.push('/superadmin/login')
+const navItems = [
+  { name: 'Dashboard', path: '/superadmin', icon: ZapIcon },
+  { name: 'Network Tenants', path: '/superadmin/organizations', icon: BuildingIcon },
+]
+
+const filteredOrgs = computed(() => {
+  const query = searchQuery.value.toLowerCase()
+  return organizations.value.filter(o => o.Org_Name.toLowerCase().includes(query) || o.Org_Domain.toLowerCase().includes(query))
+})
+
+const showNotification = (message, type = 'success') => {
+  notification.value = { show: true, message, type }
+  setTimeout(() => notification.value.show = false, 3000)
 }
 
 const loadOrganizations = async () => {
   loading.value = true
-  error.value = ''
   try {
-    const token = localStorage.getItem('superAdminToken')
-    if (!token) {
-      router.push('/superadmin/login')
-      return
-    }
-
-    const response = await axios.get(
-      'http://localhost:4000/api/superadmin/organizations',
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    if (response.data?.organizations) {
-      organizations.value = response.data.organizations.map(org => ({
-        ...org,
-        initials: org.Org_Name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2)
-      }))
-    }
+    const res = await getOrganizations()
+    organizations.value = res.organizations || []
   } catch (err) {
-    console.error('Failed to load organizations:', err)
-    error.value = 'Failed to load organizations'
+    showNotification('Failed to load organizations: ' + err.message, 'error')
   } finally {
     loading.value = false
   }
 }
 
-const viewOrgDetails = async (org) => {
+const loadOrgDetails = async (id) => {
+  loading.value = true
   try {
-    const token = localStorage.getItem('superAdminToken')
-    const response = await axios.get(
-      `http://localhost:4000/api/superadmin/organizations/${org.Org_ID}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    selectedOrg.value = {
-      ...response.data,
-      initials: org.initials
-    }
-    actionMessage.value = ''
+    const res = await getOrgDetails(id)
+    selectedOrg.value = res
+    showManagementDrawer.value = true
   } catch (err) {
-    console.error('Failed to load org details:', err)
-    error.value = 'Failed to load organization details'
-  }
-}
-
-const suspendOrg = async (orgId) => {
-  submitting.value = true
-  try {
-    const token = localStorage.getItem('superAdminToken')
-    const newStatus = selectedOrg.value.Is_Active ? 'suspended' : 'active'
-    
-    await axios.put(
-      `http://localhost:4000/api/superadmin/organizations/${orgId}/status`,
-      { status: newStatus },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    selectedOrg.value.Is_Active = !selectedOrg.value.Is_Active
-    actionMessage.value = `✅ Organization ${newStatus} successfully`
-    actionMessageType.value = 'success'
-    
-    // Reload organizations
-    setTimeout(() => {
-      loadOrganizations()
-    }, 1500)
-  } catch (err) {
-    actionMessage.value = err.response?.data?.error || 'Failed to update status'
-    actionMessageType.value = 'error'
+    showNotification('Failed to load org details: ' + err.message, 'error')
   } finally {
-    submitting.value = false
+    loading.value = false
   }
 }
 
-const deleteOrg = async (orgId) => {
-  if (!confirm('⚠️ Are you sure you want to delete this organization? This action cannot be undone!')) {
+const handleCreateSubmit = async () => {
+  if (!newOrgForm.value.Org_Name || !newOrgForm.value.Org_Domain) {
+    showNotification('Organization name and domain are required', 'error')
     return
   }
-
-  submitting.value = true
+  
+  operationLoading.value = true
   try {
-    const token = localStorage.getItem('superAdminToken')
-    
-    await axios.delete(
-      `http://localhost:4000/api/superadmin/organizations/${orgId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    actionMessage.value = '✅ Organization deleted successfully'
-    actionMessageType.value = 'success'
-    
-    setTimeout(() => {
-      selectedOrg.value = null
-      loadOrganizations()
-    }, 1500)
+    await createOrganization({
+      Org_Name: newOrgForm.value.Org_Name,
+      Org_Domain: newOrgForm.value.Org_Domain,
+      Theme_Color: newOrgForm.value.Theme_Color || '#D97A2B'
+    })
+    showNotification('Organization created successfully', 'success')
+    newOrgForm.value = { Org_Name: '', Org_Domain: '', Theme_Color: '' }
+    showCreateModal.value = false
+    await loadOrganizations()
   } catch (err) {
-    actionMessage.value = err.response?.data?.error || 'Failed to delete organization'
-    actionMessageType.value = 'error'
+    showNotification('Creation failed: ' + err.message, 'error')
   } finally {
-    submitting.value = false
+    operationLoading.value = false
   }
 }
 
-const extendTrial = async (orgId) => {
-  submitting.value = true
+const startEditOrg = (org) => {
+  editOrgForm.value = {
+    Org_ID: org.Org_ID,
+    Org_Name: org.Org_Name,
+    Org_Domain: org.Org_Domain,
+    Theme_Color: org.Theme_Color || '#D97A2B'
+  }
+  showEditModal.value = true
+}
+
+const handleEditSubmit = async () => {
+  operationLoading.value = true
   try {
-    const token = localStorage.getItem('superAdminToken')
-    
-    await axios.put(
-      `http://localhost:4000/api/superadmin/organizations/${orgId}/extend-trial`,
-      {},
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    actionMessage.value = '✅ Trial extended by 30 days'
-    actionMessageType.value = 'success'
+    await updateOrganization(editOrgForm.value.Org_ID, {
+      Org_Name: editOrgForm.value.Org_Name,
+      Org_Domain: editOrgForm.value.Org_Domain,
+      Theme_Color: editOrgForm.value.Theme_Color
+    })
+    showNotification('Organization updated successfully', 'success')
+    showEditModal.value = false
+    await loadOrganizations()
+    if (selectedOrg.value?.info.Org_ID === editOrgForm.value.Org_ID) {
+      await loadOrgDetails(editOrgForm.value.Org_ID)
+    }
   } catch (err) {
-    actionMessage.value = err.response?.data?.error || 'Failed to extend trial'
-    actionMessageType.value = 'error'
+    showNotification('Update failed: ' + err.message, 'error')
   } finally {
-    submitting.value = false
+    operationLoading.value = false
   }
 }
 
-const viewUsers = async (orgId) => {
-  submitting.value = true
+const handleToggleStatus = async (id, current) => {
+  if (!confirm('Are you sure you want to ' + (current ? 'deactivate' : 'activate') + ' this organization?')) return
+  
+  operationLoading.value = true
   try {
-    const token = localStorage.getItem('superAdminToken')
-    
-    const response = await axios.get(
-      `http://localhost:4000/api/superadmin/organizations/${orgId}/users`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-    
-    selectedOrgUsers.value = response.data
-    showUsersModal.value = true
+    await toggleOrgStatus(id, !current)
+    showNotification('Organization status updated', 'success')
+    await loadOrganizations()
+    if (selectedOrg.value?.info.Org_ID === id) {
+      await loadOrgDetails(id)
+    }
   } catch (err) {
-    actionMessage.value = err.response?.data?.error || 'Failed to load users'
-    actionMessageType.value = 'error'
+    showNotification('Status update failed: ' + err.message, 'error')
   } finally {
-    submitting.value = false
+    operationLoading.value = false
   }
 }
 
-onMounted(() => {
-  loadOrganizations()
-})
+const handleDeleteOrg = async (id) => {
+  if (!confirm('⚠️ Are you sure? This will permanently delete the organization and all its data.')) return
+  
+  operationLoading.value = true
+  try {
+    await deleteOrganization(id)
+    showNotification('Organization deleted successfully', 'success')
+    selectedOrg.value = null
+    showManagementDrawer.value = false
+    await loadOrganizations()
+  } catch (err) {
+    showNotification('Delete failed: ' + err.message, 'error')
+  } finally {
+    operationLoading.value = false
+  }
+}
+
+const handleAssignUser = async () => {
+  if (!selectedUserToAdd.value) {
+    showNotification('Please select a user', 'error')
+    return
+  }
+  
+  operationLoading.value = true
+  try {
+    await assignUserToOrg(selectedOrg.value.info.Org_ID, selectedUserToAdd.value)
+    showNotification('User assigned to organization', 'success')
+    selectedUserToAdd.value = ''
+    await loadOrgDetails(selectedOrg.value.info.Org_ID)
+  } catch (err) {
+    showNotification('Assignment failed: ' + err.message, 'error')
+  } finally {
+    operationLoading.value = false
+  }
+}
+
+const handleRemoveUser = async (userId) => {
+  if (!confirm('Remove this user from the organization?')) return
+  
+  operationLoading.value = true
+  try {
+    await removeUserFromOrg(selectedOrg.value.info.Org_ID, userId)
+    showNotification('User removed from organization', 'success')
+    await loadOrgDetails(selectedOrg.value.info.Org_ID)
+  } catch (err) {
+    showNotification('Removal failed: ' + err.message, 'error')
+  } finally {
+    operationLoading.value = false
+  }
+}
+
+onMounted(loadOrganizations)
 </script>
 
 <style scoped>
-::-webkit-scrollbar {
-  width: 8px;
-}
+.custom-scrollbar::-webkit-scrollbar { width: 3px; height: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
+/* Drawer Transitions */
+.drawer-enter-active, .drawer-leave-active { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.drawer-enter-from, .drawer-leave-to { transform: translateX(100%); opacity: 0; }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
+/* Modal Transitions */
+.modal-enter-active, .modal-leave-active { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.modal-enter-from, .modal-leave-to { transform: scale(0.95); opacity: 0; }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+/* Toast Transitions */
+.toast-enter-active, .toast-leave-active { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.toast-enter-from, .toast-leave-to { transform: translateY(-100%); opacity: 0; }
 </style>

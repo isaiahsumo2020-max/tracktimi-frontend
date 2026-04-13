@@ -1,25 +1,19 @@
-// src/utils/api.js
 import axios from 'axios'
-import { useAuthStore } from '@/stores/auth.js'
-
-
-// Use environment variable for backend
-const baseURL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
-  baseURL: baseURL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 })
 
-// Request interceptor - auto-add token
+// Add the token to every request automatically
 api.interceptors.request.use((config) => {
-  const authStore = useAuthStore()
-  if (authStore.token) {
-    config.headers.Authorization = `Bearer ${authStore.token}`
+  // Check for both regular token and superAdminToken
+  const token = localStorage.getItem('token') || localStorage.getItem('superAdminToken')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config
-})
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 export default api

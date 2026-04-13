@@ -7,6 +7,8 @@ const routes = [
   { path: '/about', name: 'About', component: () => import('@/views/About.vue') },
   { path: '/login', name: 'Login', component: () => import('@/views/auth/Login.vue') },
   { path: '/register-org', name: 'RegisterOrg', component: () => import('@/views/auth/OrgRegister.vue') },
+  { path: '/verify-email', name: 'VerifyEmail', component: () => import('@/views/auth/VerifyEmail.vue') },
+  { path: '/reset-password', name: 'ResetPassword', component: () => import('@/views/auth/ResetPassword.vue') },
   { path: '/activate/:token', name: 'EmployeeActivation', component: () => import('@/views/auth/EmployeeActivation.vue') },
 
   // SUPERADMIN (LOGIN + DASHBOARD + PAGES)
@@ -19,6 +21,7 @@ const routes = [
   { path: '/superadmin/monitoring', name: 'SuperAdminMonitoring', component: () => import('@/views/admin/SuperAdminMonitoring.vue') },
   { path: '/superadmin/audit-logs', name: 'SuperAdminAuditLogs', component: () => import('@/views/admin/SuperAdminAuditLogs.vue') },
   { path: '/superadmin/settings', name: 'SuperAdminSettings', component: () => import('@/views/admin/SuperAdminSettings.vue') },
+  { path: '/superadmin/feedback', name: 'SuperAdminFeedback', component: () => import('@/views/superadmin/FeedbackManagement.vue') },
 
   // ORGANIZATION 
   { path: '/:orgSlug', redirect: '/:orgSlug/dashboard' },
@@ -30,11 +33,15 @@ const routes = [
       { path: 'user-dashboard', name: 'UserDashboard', component: () => import('@/views/tenant/UserDashboard.vue') },
       { path: 'users', name: 'OrgUsers', component: () => import('@/views/tenant/Users.vue') },
       { path: 'employees', name: 'EmployeeManagement', component: () => import('@/views/admin/EmployeeManagement.vue') },
+      { path: 'time-tracking', name: 'TimeTracking', component: () => import('@/views/admin/TimeTracking.vue') },
       { path: 'departments', name: 'OrgDepartments', component: () => import('@/views/tenant/Departments.vue') },
       { path: 'checkin', name: 'OrgCheckin', component: () => import('@/views/tenant/Checkin.vue') },
-      { path: 'settings', name: 'OrgSettings', component: () => import('@/views/tenant/Settings.vue') },
       { path: 'schedule', name: 'UserSchedule', component: () => import('@/views/tenant/UserSchedule.vue') },
-      { path: 'checkins', name: 'UserCheckins', component: () => import('@/views/tenant/UserCheckins.vue') }
+      { path: 'admin-schedule', name: 'AdminSchedule', component: () => import('@/views/admin/AdminSchedule.vue') },
+      { path: 'settings', name: 'OrgSettings', component: () => import('@/views/tenant/Settings.vue') },
+      { path: 'checkins', name: 'UserCheckins', component: () => import('@/views/tenant/UserCheckins.vue') },
+      { path: 'feedback', name: 'OrgFeedback', component: () => import('@/views/tenant/Feedback.vue') },
+      { path: 'time-management', name: 'TimeManagement', component: () => import('@/views/tenant/TimeManagement.vue') }
     ]
   },
 
@@ -53,22 +60,17 @@ router.beforeEach((to, from, next) => {
   const superAdminToken = localStorage.getItem('superAdminToken')
 
   // Public routes
-  if (['Landing', 'Login', 'RegisterOrg'].includes(to.name)) {
+  if (['Landing', 'Login', 'RegisterOrg', 'VerifyEmail', 'ResetPassword', 'SuperAdminLogin', 'About', 'EmployeeActivation'].includes(to.name)) {
     next()
     return
   }
 
   // ✅ SUPERADMIN ROUTES - Special handling
   if (to.path.startsWith('/superadmin')) {
-    if (to.path === '/superadmin/login') {
-      next()
-      return
-    }
-
     if (superAdminToken) {
       next()  // Allow superadmin
     } else {
-      next('/superadmin/login')  // redirect to superadmin login
+      next({ name: 'SuperAdminLogin' })  // redirect to superadmin login
     }
     return
   }

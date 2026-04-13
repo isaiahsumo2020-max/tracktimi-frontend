@@ -1,401 +1,186 @@
 <template>
-  <div class="flex h-screen bg-gray-100">
+  <div class="flex h-screen bg-slate-50 font-sans overflow-hidden">
+    <!-- Settings Modal -->
+    <SettingsModal
+      :isOpen="showSettings"
+      @close="showSettings = false"
+    />
+
+    <!-- Real-time Notifications (Toast) -->
+    <RealtimeNotifications 
+      :notifications="displayNotifications"
+      @dismiss="dismissNotification"
+    />
+
+    <!-- Notification Panel (Modal) -->
+    <NotificationPanel
+      :isOpen="showNotificationPanel"
+      :notifications="notifications"
+      :unreadCount="unreadCount"
+      @close="showNotificationPanel = false"
+      @mark-as-read="markNotificationAsRead"
+      @delete="deleteNotification"
+      @mark-all-read="markAllAsRead"
+    />
+
     <!-- Sidebar -->
-    <aside :class="[
-        sidebarOpen ? 'w-64' : 'w-0 overflow-hidden',
-        'bg-gradient-to-b from-gray-600 to-emerald-700 text-white shadow-xl flex flex-col transition-all duration-300'
-      ]">
-      <!-- Logo -->
-      <div class="p-6 border-b border-emerald-500 flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-            <span class="text-xl font-bold text-white">A</span>
-          </div>
-          <span class="text-lg font-bold">TrackTimi</span>
-        </div>
-        <button @click="toggleSidebar" class="p-1 rounded-lg bg-emerald-500 hover:bg-emerald-400">
-          <span v-if="sidebarOpen">←</span>
-          <span v-else>→</span>
-        </button>
-      </div>
-      <!-- <div class="p-6 border-b border-emerald-500">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-            <span class="text-xl font-bold text-white">A</span>
-          </div>
-          <span class="text-lg font-bold">TrackTimi</span>
-        </div>
-      </div> -->
+    <Sidebar 
+      :open="sidebarOpen" 
+      :activeSection="activeSection"
+      @toggle-sidebar="sidebarOpen = !sidebarOpen"
+      @select-section="activeSection = $event"
+    />
 
-      <!-- Navigation -->
-      <nav class="flex-1 py-8 px-4 space-y-2">
-        <router-link
-          to="/superadmin"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all"
-          :class="[$route.path === '/superadmin' ? 'bg-orange-500 text-white shadow-lg' : 'text-emerald-100 hover:bg-emerald-500']"
-        >
-          <span>📊</span>
-          <span>Dashboard</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/organizations"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>🏢</span>
-          <span>Organizations</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/revenue"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>💰</span>
-          <span>Revenue</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/subscriptions"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>📦</span>
-          <span>Subscriptions</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/analytics"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>📈</span>
-          <span>Analytics</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/monitoring"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>🔍</span>
-          <span>Monitoring</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/audit-logs"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>📋</span>
-          <span>Audit Logs</span>
-        </router-link>
-
-        <router-link
-          to="/superadmin/settings"
-          class="flex items-center space-x-3 px-4 py-3 rounded-lg font-semibold transition-all text-emerald-100 hover:bg-emerald-500"
-        >
-          <span>⚙️</span>
-          <span>Settings</span>
-        </router-link>
-      </nav>
-
-      <!-- User Profile -->
-      <div class="p-6 border-t border-emerald-500">
-        <div class="flex items-center space-x-3 cursor-pointer hover:bg-emerald-500 p-3 rounded-lg transition-all">
-          <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center font-bold">
-            JS
-          </div>
-          <div class="flex-1">
-            <div class="font-semibold text-sm">Jodell Suah</div>
-            <div class="text-xs text-emerald-200">Super Admin</div>
-          </div>
-          <span>→</span>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 overflow-auto">
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <!-- Header -->
-      <div class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
-        <div class="px-8 py-8">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-slate-900">Dashboard</h1>
-              <p class="text-slate-600 mt-2">Platform overview and key metrics</p>
-            </div>
-            <div class="flex items-center space-x-3">
-              <button
-                @click="refreshData"
-                class="flex items-center space-x-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition-all shadow-sm"
-              >
-                <span>🔄</span>
-                <span>Refresh</span>
-              </button>
-              <button class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-slate-700 rounded-lg font-semibold transition-all">
-                Settings
-              </button>
-              <button @click="handleLogout" class="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all">
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <HeaderBar 
+        :loading="loading"
+        :unreadCount="unreadCount"
+        @refresh="refreshData"
+        @logout="handleLogout"
+        @notifications="showNotificationPanel = true"
+        @open-settings="showSettings = true"
+      />
 
-      <!-- Content -->
-      <div class="p-8">
-        <!-- Metrics Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <!-- Organizations Card -->
-          <div @click="viewOrganizationsDetail" class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-emerald-300">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-bold uppercase tracking-wide">Organizations</p>
-                <p class="text-4xl font-bold text-slate-900 mt-2">{{ metrics.organizations }}</p>
-                <p class="text-gray-500 text-xs mt-1">Click to view details</p>
-              </div>
-              <div class="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <span class="text-3xl">🏢</span>
-              </div>
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <div class="p-10 space-y-10">
+          
+          <!-- OVERVIEW SECTION -->
+          <div v-show="activeSection === 'dashboard'" class="animate-in space-y-10">
+            <h2 class="text-3xl font-black text-primary-600">Dashboard</h2>
+            
+            <!-- Metric Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <StatCard
+                v-for="stat in stats"
+                :key="stat.label"
+                :icon="stat.icon"
+                :label="stat.label"
+                :value="stat.value"
+                :color="stat.color"
+                :trend="stat.trend"
+              />
             </div>
-          </div>
 
-          <!-- Total Employees Card -->
-          <div @click="viewEmployeesDetail" class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-blue-300">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-bold uppercase tracking-wide">Total Employees</p>
-                <p class="text-4xl font-bold text-slate-900 mt-2">{{ metrics.employees }}</p>
-                <p class="text-gray-500 text-xs mt-1">Click to view details</p>
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div class="lg:col-span-2">
+                <RecentOrganizations :organizations="organizationsList" />
               </div>
-              <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span class="text-3xl">👥</span>
-              </div>
+              <SystemStatus 
+                :checkInRate="densityScore"
+                :serverStatus="99.9"
+                :dbLoad="dbLoad"
+                :connections="`${organizationsList.length}K+`"
+              />
             </div>
-          </div>
 
-          <!-- Today's Check-ins Card -->
-          <div @click="viewCheckinsDetail" class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all cursor-pointer hover:border-purple-300">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-bold uppercase tracking-wide">Today's Check-ins</p>
-                <p class="text-4xl font-bold text-slate-900 mt-2">{{ metrics.checkins }}</p>
-                <p class="text-gray-500 text-xs mt-1">Click to view details</p>
+            <!-- Secondary Analytics row -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
+                <h3 class="text-xs font-black text-primary-600 uppercase tracking-widest mb-8 flex items-center">
+                  <UsersIcon class="w-4 h-4 mr-2" /> Active Users
+                </h3>
+                <p class="text-4xl font-black text-slate-900 mb-3">{{ metrics.totalUsers }}</p>
+                <div class="flex items-center space-x-2 text-[9px] font-black text-primary-600 uppercase tracking-widest">
+                  <TrendingUpIcon class="w-3 h-3" />
+                  <span>+12% from last week</span>
+                </div>
               </div>
-              <div class="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center">
-                <span class="text-3xl">👤</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- MRR Card -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-bold uppercase tracking-wide">MRR</p>
-                <p class="text-4xl font-bold text-slate-900 mt-2">{{ metrics.mrr }}</p>
-                <p class="text-emerald-600 text-xs mt-1 font-semibold">+12.5% from last month</p>
+              <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
+                <h3 class="text-xs font-black text-accent-600 uppercase tracking-widest mb-8 flex items-center">
+                  <CheckCircleIcon class="w-4 h-4 mr-2" /> Today's Check-ins
+                </h3>
+                <p class="text-4xl font-black text-slate-900 mb-3">{{ metrics.todayCheckins }}</p>
+                <div class="flex items-center space-x-2 text-[9px] font-black text-accent-600 uppercase tracking-widest">
+                  <TrendingUpIcon class="w-3 h-3" />
+                  <span>{{ densityScore }}% attendance rate</span>
+                </div>
               </div>
-              <div class="w-16 h-16 bg-yellow-100 rounded-xl flex items-center justify-center">
-                <span class="text-3xl">📈</span>
-              </div>
-            </div>
-          </div>
 
-          <!-- Active Subscriptions Card -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-bold uppercase tracking-wide">Active Subscriptions</p>
-                <p class="text-4xl font-bold text-slate-900 mt-2">{{ metrics.subscriptions }}</p>
-                <p class="text-gray-500 text-xs mt-1">95 paid</p>
-              </div>
-              <div class="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center">
-                <span class="text-3xl">📦</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Churn Rate Card -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-bold uppercase tracking-wide">Churn Rate</p>
-                <p class="text-4xl font-bold text-slate-900 mt-2">{{ metrics.churnRate }}</p>
-                <p class="text-red-600 text-xs mt-1 font-semibold">Last 30 days</p>
-              </div>
-              <div class="w-16 h-16 bg-red-100 rounded-xl flex items-center justify-center">
-                <span class="text-3xl">📉</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Charts Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Organization Growth Chart -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-slate-900">Organization Growth (6 Months)</h2>
-              <a href="#" class="text-emerald-600 font-semibold text-sm hover:text-emerald-700">View Details →</a>
-            </div>
-            <div class="h-64 bg-gradient-to-b from-gray-100 to-gray-50 rounded-lg flex items-end justify-center space-x-1 p-4">
-              <div v-for="(value, idx) in chartData.growth" :key="idx" class="flex flex-col items-center flex-1">
-                <div 
-                  class="w-full bg-gradient-to-t from-slate-400 to-slate-300 rounded-t opacity-70 transition-all hover:opacity-100"
-                  :style="{ height: (value / 35) * 100 + '%' }"
-                ></div>
-              </div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-600 mt-4 px-2">
-              <span>Sep</span>
-              <span>Oct</span>
-              <span>Nov</span>
-              <span>Dec</span>
-              <span>Jan</span>
-              <span>Feb</span>
-            </div>
-          </div>
-
-          <!-- Revenue Trend Chart -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-slate-900">Revenue Trend (MRR)</h2>
-              <a href="#" class="text-emerald-600 font-semibold text-sm hover:text-emerald-700">View Details →</a>
-            </div>
-            <div class="h-64 bg-gradient-to-b from-gray-100 to-gray-50 rounded-lg flex items-end justify-center space-x-2 p-4">
-              <div v-for="(value, idx) in chartData.revenue" :key="idx" class="flex-1">
-                <div 
-                  class="w-full bg-gradient-to-t from-yellow-400 to-yellow-300 rounded-t transition-all hover:opacity-80"
-                  :style="{ height: (value / 200000) * 100 + '%' }"
-                ></div>
-              </div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-600 mt-4 px-2">
-              <span>Sep</span>
-              <span>Oct</span>
-              <span>Nov</span>
-              <span>Dec</span>
-              <span>Jan</span>
-              <span>Feb</span>
-            </div>
-          </div>
-
-          <!-- Global Attendance Trend -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-slate-900">Global Attendance Trend</h2>
-              <a href="#" class="text-emerald-600 font-semibold text-sm hover:text-emerald-700">View Details →</a>
-            </div>
-            <div class="h-64 bg-gradient-to-b from-gray-100 to-gray-50 rounded-lg flex items-end justify-center p-4">
-              <svg class="w-full h-full" viewBox="0 0 400 200" preserveAspectRatio="none">
-                <polyline
-                  points="0,180 50,160 100,140 150,120 200,100 250,90 300,80 350,70 400,60"
-                  fill="none"
-                  stroke="#06b6d4"
-                  stroke-width="3"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </div>
-          </div>
-
-          <!-- Subscription Plan Distribution -->
-          <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-bold text-slate-900">Subscription Plan Distribution</h2>
-              <a href="#" class="text-emerald-600 font-semibold text-sm hover:text-emerald-700">View Details →</a>
-            </div>
-            <div class="h-64 flex items-center justify-center">
-              <div class="relative w-48 h-48 rounded-full" style="background: conic-gradient(#2563eb 0deg 90deg, #000000 90deg 270deg, #0ea5e9 270deg);">
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <div class="w-32 h-32 bg-white rounded-full flex items-center justify-center text-center">
-                    <div>
-                      <p class="text-sm text-gray-600">Active</p>
-                      <p class="text-2xl font-bold text-slate-900">85%</p>
-                    </div>
-                  </div>
+              <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
+                <h3 class="text-xs font-black text-primary-600 uppercase tracking-widest mb-8 flex items-center">
+                  <ActivityIcon class="w-4 h-4 mr-2" /> System Uptime
+                </h3>
+                <p class="text-4xl font-black text-slate-900 mb-3">99.9%</p>
+                <div class="flex items-center space-x-2 text-[9px] font-black text-primary-600 uppercase tracking-widest">
+                  <CheckCircleIcon class="w-3 h-3" />
+                  <span>All systems operational</span>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Organizations Detail Modal -->
-        <div v-if="selectedModalType === 'organizations'" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
-            <div class="sticky top-0 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 flex items-center justify-between">
-              <h2 class="text-2xl font-bold">Organizations Overview</h2>
-              <button @click="selectedModalType = null" class="text-2xl hover:text-emerald-200">&times;</button>
-            </div>
-            <div class="p-8">
-              <div v-if="organizationsList.length" class="space-y-3">
-                <div v-for="org in organizationsList.slice(0, 10)" :key="org.Org_ID" class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-emerald-300 transition-all">
-                  <div class="flex-1">
-                    <p class="font-semibold text-slate-900">{{ org.Org_Name }}</p>
-                    <p class="text-xs text-gray-600">ID: {{ org.Org_ID }}</p>
-                  </div>
-                  <div class="flex items-center space-x-4">
-                    <span :class="['px-3 py-1 rounded-full text-xs font-semibold', org.Is_Active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800']">
-                      {{ org.Is_Active ? 'Active' : 'Inactive' }}
-                    </span>
-                    <router-link :to="`/superadmin/organizations`" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold transition-all text-sm">
-                      Manage
-                    </router-link>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-center py-12">
-                <p class="text-gray-500">No organizations found</p>
-              </div>
+          <!-- ANALYTICS SECTION -->
+          <div v-if="activeSection === 'analytics'" class="animate-in">
+            <Analytics />
+          </div>
+
+          <!-- SYSTEM STATUS SECTION -->
+          <div v-if="activeSection === 'system-status'" class="animate-in space-y-10">
+            <h2 class="text-3xl font-black text-primary-600">System Status</h2>
+            <SystemStatus 
+              :checkInRate="densityScore"
+              :serverStatus="99.9"
+              :dbLoad="dbLoad"
+              :connections="`${organizationsList.length}K+`"
+            />
+          </div>
+
+          <!-- ORGANIZATIONS SECTION -->
+          <div v-show="activeSection === 'organizations'" class="animate-in">
+            <Organizations />
+          </div>
+
+          <!-- USERS SECTION -->
+          <div v-show="activeSection === 'users'" class="animate-in space-y-10">
+            <UsersManagement />
+          </div>
+
+          <!-- DEPARTMENTS SECTION -->
+          <div v-show="activeSection === 'departments'" class="animate-in space-y-10">
+            <h2 class="text-3xl font-black text-primary-600">Departments</h2>
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
+              <p class="text-slate-500">Departments component will be displayed here</p>
             </div>
           </div>
-        </div>
 
-        <!-- Employees Detail Modal -->
-        <div v-if="selectedModalType === 'employees'" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
-            <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex items-center justify-between">
-              <h2 class="text-2xl font-bold">Employees Overview</h2>
-              <button @click="selectedModalType = null" class="text-2xl hover:text-blue-200">&times;</button>
-            </div>
-            <div class="p-8">
-              <div v-if="employeesList.length" class="space-y-3">
-                <div v-for="emp in employeesList.slice(0, 10)" :key="emp.User_ID" class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div class="flex-1">
-                    <p class="font-semibold text-slate-900">{{ emp.Full_Name }}</p>
-                    <p class="text-xs text-gray-600">{{ emp.Email }}</p>
-                  </div>
-                  <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">{{ emp.Role }}</span>
-                </div>
-              </div>
-              <div v-else class="text-center py-12">
-                <p class="text-gray-500">No employees found</p>
-              </div>
+          <!-- ATTENDANCE SECTION -->
+          <div v-show="activeSection === 'attendance'" class="animate-in space-y-10">
+            <h2 class="text-3xl font-black text-primary-600">Attendance Tracking</h2>
+            <div class="bg-white rounded-lg border border-slate-200 shadow-sm p-8">
+              <p class="text-slate-500">Attendance component will be displayed here</p>
             </div>
           </div>
-        </div>
 
-        <!-- Check-ins Detail Modal -->
-        <div v-if="selectedModalType === 'checkins'" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div class="bg-white rounded-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
-            <div class="sticky top-0 bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex items-center justify-between">
-              <h2 class="text-2xl font-bold">Today's Check-ins</h2>
-              <button @click="selectedModalType = null" class="text-2xl hover:text-purple-200">&times;</button>
-            </div>
-            <div class="p-8">
-              <div v-if="checkinsList.length" class="space-y-3">
-                <div v-for="(checkin, idx) in checkinsList.slice(0, 10)" :key="idx" class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div class="flex-1">
-                    <p class="font-semibold text-slate-900">{{ checkin.employeeId }}</p>
-                    <p class="text-xs text-gray-600">{{ checkin.time }}</p>
-                  </div>
-                  <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Checked In</span>
-                </div>
-              </div>
-              <div v-else class="text-center py-12">
-                <p class="text-gray-500">No check-ins found for today</p>
-              </div>
-            </div>
+          <!-- GEOFENCES SECTION -->
+          <div v-show="activeSection === 'geofences'" class="animate-in space-y-10">
+            <Geofences />
           </div>
+
+          <!-- ALERTS SECTION -->
+          <div v-show="activeSection === 'alerts'" class="animate-in">
+            <Alerts />
+          </div>
+
+          <!-- AUDIT LOGS SECTION -->
+          <div v-show="activeSection === 'audit-logs'" class="animate-in">
+            <AuditLogs />
+          </div>
+
+          <!-- FEEDBACK SECTION -->
+          <div v-show="activeSection === 'feedback'" class="animate-in">
+            <FeedbackManagement />
+          </div>
+
+          <!-- SYSTEM CONFIG SECTION -->
+          <div v-show="activeSection === 'system-config'" class="animate-in">
+            <SystemConfiguration />
+          </div>
+
         </div>
       </div>
     </main>
@@ -403,34 +188,130 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import io from 'socket.io-client'
+import { getDashboard, getOrganizations, getNotifications, markNotificationAsRead, getUnreadNotificationCount, deleteNotification as deleteNotifApi, markAllNotificationsAsRead } from '@/services/superadminApi'
+import { useDashboardMetrics } from '@/composables/useDashboardMetrics'
+import Sidebar from '@/components/dashboard/Sidebar.vue'
+import HeaderBar from '@/components/dashboard/HeaderBar.vue'
+import StatCard from '@/components/dashboard/StatCard.vue'
+import RecentOrganizations from '@/components/dashboard/RecentOrganizations.vue'
+import SystemStatus from '@/components/dashboard/SystemStatus.vue'
+import Analytics from '@/components/dashboard/Analytics.vue'
+import Organizations from '@/components/dashboard/Organizations.vue'
+import Geofences from '@/components/dashboard/Geofences.vue'
+import Alerts from '@/components/dashboard/Alerts.vue'
+import AuditLogs from '@/components/dashboard/AuditLogs.vue'
+import SystemConfiguration from '@/components/dashboard/SystemConfiguration.vue'
+import UsersManagement from '@/components/dashboard/UsersManagement.vue'
+import RealtimeNotifications from '@/components/dashboard/RealtimeNotifications.vue'
+import NotificationPanel from '@/components/dashboard/NotificationPanel.vue'
+import SettingsModal from '@/components/dashboard/SettingsModal.vue'
+import FeedbackManagement from '@/components/dashboard/FeedbackManagement.vue'
+import {
+  BuildingIcon, UsersIcon, ClockIcon, BarChart3Icon,
+  TrendingUpIcon, CheckCircleIcon, ActivityIcon
+} from 'lucide-vue-next'
 
 const router = useRouter()
-
 const sidebarOpen = ref(true)
-const selectedModalType = ref(null)
+const loading = ref(false)
+const showSettings = ref(false)
+const showNotificationPanel = ref(false)
+const activeSection = ref('dashboard')
+const notifications = ref([])
+const unreadCount = ref(0)
+const notifRefreshInterval = ref(null)
+const isRefreshingNotifications = ref(false)
+const lastNotifCheck = ref(0)
+const socket = ref(null)
+
+// Real-time metrics composable (SuperAdmin/System-wide)
+const { 
+  superadminMetrics, 
+  isConnected: metricsConnected,
+  requestSystemMetrics,
+  alerts: realtimeAlerts,
+  clearAlerts: clearRealtimeAlerts
+} = useDashboardMetrics({ dashboardType: 'superadmin' })
+
+// Data State
+const metrics = ref({ totalOrgs: 0, totalUsers: 0, todayCheckins: 0, totalDepts: 0 })
 const organizationsList = ref([])
-const employeesList = ref([])
-const checkinsList = ref([])
 
-const metrics = ref({
-  organizations: 0,
-  employees: 0,
-  checkins: 0,
-  mrr: '$0',
-  subscriptions: 0,
-  churnRate: '0%'
+// Computed Properties
+const densityScore = computed(() => {
+  // Use real-time metrics when available
+  const totalUsers = superadminMetrics.value.totalUsers || metrics.value.totalUsers || 0
+  const checkins = superadminMetrics.value.todayCheckins || metrics.value.todayCheckins || 0
+  if (totalUsers === 0) return 0
+  return Math.round((checkins / totalUsers) * 100)
 })
 
-const chartData = ref({
-  growth: [12, 18, 15, 23, 20, 32],
-  revenue: [25000, 28000, 26000, 32000, 35000, 180000]
+const dbLoad = computed(() => {
+  return superadminMetrics.value.dbLoad || (Math.random() * 60 + 20)
 })
 
-const toggleSidebar = () => {
-  sidebarOpen.value = !sidebarOpen.value
+const stats = computed(() => [
+  {
+    label: 'Organizations',
+    value: superadminMetrics.value.totalOrganizations || metrics.value.totalOrgs,
+    icon: BuildingIcon,
+    color: '#0284c7', // primary-600
+    trend: 8
+  },
+  {
+    label: 'Total Users',
+    value: superadminMetrics.value.totalUsers || metrics.value.totalUsers,
+    icon: UsersIcon,
+    color: '#ea580c', // accent-600
+    trend: 12
+  },
+  {
+    label: 'Check-ins Today',
+    value: superadminMetrics.value.todayCheckins || metrics.value.todayCheckins,
+    icon: ClockIcon,
+    color: '#f97316', // accent-500
+    trend: -3
+  },
+  {
+    label: 'Departments',
+    value: metrics.value.totalDepts,
+    icon: BarChart3Icon,
+    color: '#0ea5e9', // primary-500
+    trend: 5
+  }
+])
+
+// Computed for notifications display (unread only)
+const displayNotifications = computed(() => {
+  return notifications.value
+    .filter(n => !n.Is_Read)
+    .sort((a, b) => new Date(b.Created_at) - new Date(a.Created_at))
+})
+
+// Methods
+const refreshData = async () => {
+  loading.value = true
+  try {
+    // Request real-time metrics update
+    requestSystemMetrics()
+
+    // Fetch Live Dashboard Stats from API (for initial load)
+    const statsRes = await getDashboard()
+    if (statsRes.data?.stats) {
+      metrics.value = statsRes.data.stats
+    }
+
+    // Fetch Recent Organizations
+    const orgsRes = await getOrganizations()
+    organizationsList.value = orgsRes.data?.organizations || []
+  } catch (error) {
+    console.error('SuperAdmin Data Sync Failed:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleLogout = () => {
@@ -439,109 +320,182 @@ const handleLogout = () => {
   router.push('/superadmin/login')
 }
 
-const loadDashboardData = async () => {
+// Load notifications with real-time updates
+const loadNotifications = async () => {
   try {
-    const token = localStorage.getItem('superAdminToken')
-    if (!token) {
-      router.push('/superadmin/login')
-      return
+    // Skip if already loading
+    if (isRefreshingNotifications.value) return
+    
+    // Skip if checked recently (debounce)
+    const now = Date.now()
+    if (lastNotifCheck.value && now - lastNotifCheck.value < 1000) return
+    
+    isRefreshingNotifications.value = true
+    lastNotifCheck.value = now
+    
+    console.log('🔔 Loading notifications...')
+    const res = await getNotifications(20)
+    console.log('📧 Notifications response:', res.data)
+    
+    // Handle both old array response and new structured response
+    if (Array.isArray(res.data)) {
+      notifications.value = res.data || []
+      // Get unread count separately if response is array
+      const countRes = await getUnreadNotificationCount()
+      unreadCount.value = countRes.data?.unreadCount || 0
+    } else if (res.data?.notifications) {
+      // New response structure with counts
+      notifications.value = res.data.notifications || []
+      unreadCount.value = res.data.unreadCount || 0
+      console.log('📊 Counts:', res.data.counts)
+    } else {
+      notifications.value = []
+      unreadCount.value = 0
     }
+    
+    console.log('✅ Unread count set to:', unreadCount.value)
+  } catch (err) {
+    console.error('❌ Failed to load notifications:', err.response?.data || err.message)
+  } finally {
+    isRefreshingNotifications.value = false
+  }
+}
 
-    const response = await axios.get(
-      'http://localhost:4000/api/superadmin/dashboard',
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
+// Dismiss notification (mark as read)
+const dismissNotification = async (notificationId) => {
+  try {
+    await markNotificationAsRead(notificationId)
+    notifications.value = notifications.value.map(n => 
+      n.Notify_ID === notificationId ? {...n, Is_Read: 1} : n
     )
-
-    if (response.data?.stats) {
-      const stats = response.data.stats
-      metrics.value = {
-        organizations: stats.totalOrgs || 0,
-        employees: stats.totalUsers || 0,
-        checkins: stats.todayCheckins || 0,
-        mrr: '$' + (stats.mrr || 0).toLocaleString(),
-        subscriptions: stats.totalSubscriptions || 0,
-        churnRate: (stats.churnRate || 0).toFixed(1) + '%'
-      }
-    }
-  } catch (error) {
-    console.error('Failed to load dashboard data:', error)
+    // Decrement unread count
+    if (unreadCount.value > 0) unreadCount.value--
+  } catch (err) {
+    console.error('Failed to dismiss notification:', err)
   }
 }
 
-const viewOrganizationsDetail = async () => {
+// Delete notification
+const deleteNotification = async (notifyId) => {
   try {
-    const token = localStorage.getItem('superAdminToken')
-    const response = await axios.get('http://localhost:4000/api/superadmin/organizations', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    organizationsList.value = response.data?.organizations || []
-    selectedModalType.value = 'organizations'
-  } catch (error) {
-    console.error('Failed to load organizations:', error)
+    await deleteNotifApi(notifyId)
+    notifications.value = notifications.value.filter(n => n.Notify_ID !== notifyId)
+  } catch (err) {
+    console.error('Failed to delete notification:', err)
   }
 }
 
-const viewEmployeesDetail = async () => {
+// Mark all as read
+const markAllAsRead = async () => {
   try {
-    const token = localStorage.getItem('superAdminToken')
-    const response = await axios.get('http://localhost:4000/api/superadmin/users', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    employeesList.value = response.data?.users || []
-    selectedModalType.value = 'employees'
-  } catch (error) {
-    console.error('Failed to load employees:', error)
+    await markAllNotificationsAsRead()
+    notifications.value = notifications.value.map(n => ({...n, Is_Read: 1}))
+    unreadCount.value = 0
+  } catch (err) {
+    console.error('Failed to mark all as read:', err)
   }
 }
 
-const viewCheckinsDetail = async () => {
-  try {
-    const token = localStorage.getItem('superAdminToken')
-    // Simulate check-ins for today
-    const today = new Date().toDateString()
-    checkinsList.value = [
-      { employeeId: 'EMP001', time: 'Today 08:15 AM', org: 'Company A' },
-      { employeeId: 'EMP002', time: 'Today 08:22 AM', org: 'Company B' },
-      { employeeId: 'EMP003', time: 'Today 08:30 AM', org: 'Company C' },
-      { employeeId: 'EMP004', time: 'Today 08:45 AM', org: 'Company A' },
-      { employeeId: 'EMP005', time: 'Today 09:00 AM', org: 'Company D' }
-    ]
-    selectedModalType.value = 'checkins'
-  } catch (error) {
-    console.error('Failed to load check-ins:', error)
-  }
-}
-
-const refreshData = async () => {
-  console.log('Refreshing dashboard data...')
-  await loadDashboardData()
-}
-
+// Lifecycle
 onMounted(() => {
-  loadDashboardData()
+  refreshData()
+  loadNotifications()
+
+  // Set up real-time Socket.IO connection
+  const token = localStorage.getItem('superAdminToken')
+  socket.value = io(import.meta.env.VITE_API_URL || 'http://localhost:4000', {
+    auth: { token },
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 10,
+    transports: ['websocket', 'polling']
+  })
+
+  // Listen for real-time notification events
+  socket.value.on('notification:new', (notifData) => {
+    console.log('📡 Real-time notification received:', notifData)
+    // Add new notification to the list
+    notifications.value.unshift({
+      Notify_ID: notifData.Notify_ID,
+      Title: notifData.title,
+      Message: notifData.message,
+      Type: notifData.type,
+      Category: notifData.category,
+      Is_Read: 0,
+      Created_at: notifData.timestamp,
+      Action_URL: notifData.actionUrl
+    })
+    // Increment unread count
+    unreadCount.value++
+    console.log('✅ Notification added to list, unread count:', unreadCount.value)
+  })
+
+  socket.value.on('connect', () => {
+    console.log('✅ SuperAdmin Dashboard Socket.IO connected')
+    // Tell server that this is a SuperAdmin connection
+    socket.value.emit('userLogin', { userId: 1, role: 'SuperAdmin' })
+  })
+
+  socket.value.on('disconnect', () => {
+    console.log('❌ SuperAdmin Dashboard Socket.IO disconnected')
+  })
+
+  socket.value.on('connect_error', (error) => {
+    console.error('📡 Socket.IO connection error:', error)
+  })
+
+  // Refresh notifications every 2 seconds for real-time updates (with debouncing)
+  notifRefreshInterval.value = setInterval(() => {
+    loadNotifications()
+  }, 2000)
+
+  // Request system metrics refresh every 30 seconds if real-time is connected
+  const metricsRefreshInterval = setInterval(() => {
+    if (metricsConnected.value) {
+      requestSystemMetrics()
+    }
+  }, 30000)
+
+  // Store interval for cleanup
+  const intervals = [notifRefreshInterval.value, metricsRefreshInterval]
+  onBeforeUnmount(() => {
+    intervals.forEach(interval => clearInterval(interval))
+    // Disconnect socket
+    if (socket.value) {
+      socket.value.disconnect()
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  if (notifRefreshInterval.value) {
+    clearInterval(notifRefreshInterval.value)
+  }
+  if (socket.value) {
+    socket.value.disconnect()
+  }
 })
 </script>
 
 <style scoped>
-::-webkit-scrollbar {
-  width: 8px;
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+@keyframes slideIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.animate-in { 
+  animation: slideIn 0.3s ease-out;
 }
 </style>
