@@ -23,61 +23,8 @@
       </form>
     </div>
   </div>
-</template>
 
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import api from '@/utils/api'
 
-const route = useRoute()
-const router = useRouter()
-const token = route.params.token
-
-const loading = ref(true)
-const submitting = ref(false)
-const email = ref('')
-const firstName = ref('')
-const surName = ref('')
-const password = ref('')
-const confirm = ref('')
-const error = ref('')
-
-onMounted(async () => {
-  try {
-    const res = await api.get(`/auth/invitation/${token}`)
-    email.value = res.data.email || ''
-    firstName.value = res.data.firstName || ''
-    firstName.value = res.data.firstName || ''
-    surName.value = res.data.surName || ''
-  } catch (e) {
-    error.value = e.response?.data?.error || 'Invitation not found or expired.'
-  } finally {
-    loading.value = false
-  }
-})
-
-async function submit() {
-  error.value = ''
-  if (!password.value || password.value.length < 6) { error.value = 'Password must be at least 6 characters'; return }
-  if (password.value !== confirm.value) { error.value = 'Passwords do not match'; return }
-  submitting.value = true
-  try {
-    await api.post('/auth/activate', { token, password: password.value })
-    // success -> go to login
-    router.push({ name: 'Login' })
-  } catch (e) {
-    error.value = e.response?.data?.error || 'Activation failed'
-  } finally {
-    submitting.value = false
-  }
-}
-</script>
-
-<style scoped>
-.max-w-md { max-width: 520px; }
-</style>
-<template>
   <div class="min-h-screen bg-gradient-to-br from-blue-50 to-primary-100 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
       <!-- Header -->
@@ -155,19 +102,60 @@ async function submit() {
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '@/utils/api.js'
+import api from '@/utils/api'
 
 const route = useRoute()
 const router = useRouter()
+const token = route.params.token
+
+const loading = ref(true)
+const submitting = ref(false)
+const email = ref('')
+const firstName = ref('')
+const surName = ref('')
+const password = ref('')
+const confirm = ref('')
+const error = ref('')
+
+onMounted(async () => {
+  try {
+    const res = await api.get(`/auth/invitation/${token}`)
+    email.value = res.data.email || ''
+    firstName.value = res.data.firstName || ''
+    firstName.value = res.data.firstName || ''
+    surName.value = res.data.surName || ''
+  } catch (e) {
+    error.value = e.response?.data?.error || 'Invitation not found or expired.'
+  } finally {
+    loading.value = false
+  }
+})
+
+async function submit() {
+  error.value = ''
+  if (!password.value || password.value.length < 6) { error.value = 'Password must be at least 6 characters'; return }
+  if (password.value !== confirm.value) { error.value = 'Passwords do not match'; return }
+  submitting.value = true
+  try {
+    await api.post('/auth/activate', { token, password: password.value })
+    // success -> go to login
+    router.push({ name: 'Login' })
+  } catch (e) {
+    error.value = e.response?.data?.error || 'Activation failed'
+  } finally {
+    submitting.value = false
+  }
+}
+
 
 // State
 const invitationDetails = ref(null)
-const password = ref('')
+// const password = ref('')
 const confirmPassword = ref('')
 const activating = ref(false)
 const activated = ref(false)
-const loading = ref(true)
-const error = ref('')
+// const loading = ref(true)
+// const error = ref('')
 
 // Methods
 const loadInvitationDetails = async () => {
@@ -225,4 +213,11 @@ const activateAccount = async () => {
 onMounted(() => {
   loadInvitationDetails()
 })
+
+
 </script>
+
+<style scoped>
+.max-w-md { max-width: 520px; }
+</style>
+
