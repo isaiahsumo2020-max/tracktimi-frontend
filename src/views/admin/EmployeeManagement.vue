@@ -970,67 +970,6 @@ const toggleSelectAll = () => {
   }
 }
 
-// Bulk change status
-const bulkChangeStatus = async () => {
-  if (selectedEmployees.value.length === 0) return
-  const confirmed = await showConfirm({
-    title: 'Activate Employees?',
-    message: `This will activate ${selectedEmployees.value.length} selected employees`,
-    type: 'info',
-    confirmText: 'Activate',
-    cancelText: 'Cancel'
-  })
-  if (!confirmed) return
-  
-  try {
-    for (const userId of selectedEmployees.value) {
-      await api.put(`/users/${userId}`, { isActive: 1 })
-    }
-    selectedEmployees.value = []
-    await loadEmployees()
-    await showSuccess(`${selectedEmployees.value.length} employees activated`)
-  } catch (err) {
-    console.error('Failed to change employee status:', err)
-    await showError('Failed to activate employees')
-  }
-}}
-
-// Bulk assign department
-const bulkAssignDepartment = async () => {
-  if (selectedEmployees.value.length === 0) return
-  const deptId = prompt('Enter department ID:')
-  if (!deptId) return
-  try {
-    for (const userId of selectedEmployees.value) {
-      await api.put(`/users/${userId}`, { departmentId: deptId })
-    }
-    selectedEmployees.value = []
-    await loadEmployees()
-  } catch (err) {
-    console.error('Failed to assign department:', err)
-  }
-}
-
-// Bulk delete
-const bulkDelete = async () => {
-  if (selectedEmployees.value.length === 0) return
-  const confirmed = await showDeleteConfirm(`${selectedEmployees.value.length} Employees`, async () => {
-    try {
-      for (const userId of selectedEmployees.value) {
-        await api.delete(`/users/${userId}`)
-      }
-      selectedEmployees.value = []
-      await loadEmployees()
-    } catch (err) {
-      console.error('Failed to delete employees:', err)
-      throw err
-    }
-  })
-}
-    console.error('Failed to delete employees:', err)
-  }
-}
-
 // Export to CSV
 const exportToCSV = () => {
   const csvData = [
@@ -1068,19 +1007,6 @@ const assignShift = (userId) => {
 const sendMessage = (userId) => {
   alert(`Message to user ${userId} - Feature coming soon!`)
   // TODO: Implement messaging modal
-}
-
-// Toggle employee status
-const toggleEmployeeStatus = async (userId) => {
-  try {
-    const emp = employees.value.find(e => e.User_ID === userId)
-    if (!emp) return
-    
-    await api.put(`/users/${userId}`, { isActive: !emp.Is_Active })
-    emp.Is_Active = !emp.Is_Active
-  } catch (err) {
-    console.error('Failed to toggle employee status:', err)
-  }
 }
 
 // Get check-in time
@@ -1164,30 +1090,41 @@ const addActivityLog = (action, details, icon = '📝') => {
 
 // Override bulk action methods to add notifications
 
-const bulkChangeStatusOriginal = bulkChangeStatus
 const bulkChangeStatus = async () => {
   if (selectedEmployees.value.length === 0) return
-  const newStatus = confirm('Activate all selected employees?') ? 1 : 0
+  const confirmed = await showConfirm({
+    title: 'Update Status',
+    message: `Activate ${selectedEmployees.value.length} selected employee${selectedEmployees.value.length > 1 ? 's' : ''}?`,
+    type: 'question',
+    confirmText: 'Activate',
+    cancelText: 'Cancel'
+  })
+  if (!confirmed) return
+
   try {
     for (const userId of selectedEmployees.value) {
-      await api.put(`/users/${userId}`, { isActive: newStatus })
+      await api.put(`/users/${userId}`, { isActive: 1 })
     }
     const count = selectedEmployees.value.length
     showLiveNotification(`✅ Updated status for ${count} employee${count > 1 ? 's' : ''}`, 'success')
-    addActivityLog(`Status Updated`, `Changed status for ${count} employee(s) to ${newStatus ? 'Active' : 'Inactive'}`, '🔄')
+    addActivityLog(`Status Updated`, `Changed status for ${count} employee(s) to Active`, '🔄')
     selectedEmployees.value = []
     await loadEmployees()
+    await showSuccess(`${count} employee${count > 1 ? 's' : ''} activated successfully`)
   } catch (err) {
     showLiveNotification(`❌ Failed to update employee status`, 'error')
     addActivityLog(`Status Update Failed`, err.message, '⚠️')
+    await showError('Failed to activate selected employees')
   }
 }
 
-const bulkAssignDepartmentOriginal = bulkAssignDepartment
 const bulkAssignDepartment = async () => {
   if (selectedEmployees.value.length === 0) return
   const deptId = prompt('Enter department ID:')
-  if (!deptId) return
+  if (!deptId) {
+    await showAlert('Department ID is required to assign selected employees.', 'warning', 'Missing Department')
+    return
+  }
   try {
     for (const userId of selectedEmployees.value) {
       await api.put(`/users/${userId}`, { departmentId: deptId })
@@ -1198,16 +1135,25 @@ const bulkAssignDepartment = async () => {
     addActivityLog(`Department Assigned`, `Moved ${count} employee(s) to ${deptName}`, '🏢')
     selectedEmployees.value = []
     await loadEmployees()
+    await showSuccess(`${count} employee${count > 1 ? 's' : ''} assigned to ${deptName}`)
   } catch (err) {
     showLiveNotification(`❌ Failed to assign department`, 'error')
     addActivityLog(`Department Assignment Failed`, err.message, '⚠️')
+    await showError('Failed to assign selected employees to department')
   }
 }
 
-const bulkDeleteOriginal = bulkDelete
 const bulkDelete = async () => {
   if (selectedEmployees.value.length === 0) return
-  if (!confirm(`Delete ${selectedEmployees.value.length} selected employees?`)) return
+  const confirmed = await showConfirm({
+    title: 'Delete Employees',
+    message: `Delete ${selectedEmployees.value.length} selected employee${selectedEmployees.value.length > 1 ? 's' : ''}?`,
+    type: 'danger',
+    confirmText: 'Delete',
+    cancelText: 'Cancel'
+  })
+  if (!confirmed) return
+
   try {
     for (const userId of selectedEmployees.value) {
       await api.delete(`/users/${userId}`)
@@ -1217,13 +1163,14 @@ const bulkDelete = async () => {
     addActivityLog(`Employees Deleted`, `Permanently deleted ${count} employee(s)`, '🗑️')
     selectedEmployees.value = []
     await loadEmployees()
+    await showSuccess(`${count} employee${count > 1 ? 's' : ''} deleted successfully`)
   } catch (err) {
     showLiveNotification(`❌ Failed to delete employees`, 'error')
     addActivityLog(`Delete Failed`, err.message, '⚠️')
+    await showError('Failed to delete selected employees')
   }
 }
 
-const toggleEmployeeStatusOriginal = toggleEmployeeStatus
 const toggleEmployeeStatus = async (userId) => {
   try {
     const emp = employees.value.find(e => e.User_ID === userId)
